@@ -12,7 +12,6 @@ public class MazeMesh extends TriangleMesh {
     private int wallHeight;
     private MazeBuilder builder = new MazeBuilder();
 
-
     public MazeMesh(int width, int height, int floorSize, int wallHeight) {
         this.width = width;
         this.height = height;
@@ -50,7 +49,6 @@ public class MazeMesh extends TriangleMesh {
         for (int y = 0; y <= maze.length; y++) {
             for (int x = 0; x <= maze[0].length; x++) {
                 float px = x * floorSize - xm;
-                float py = wallHeight;
                 float pz = y * floorSize - zm;
                 this.getPoints().addAll(px, wallHeight, pz, px, 0f, pz);
                 if (y < maze.length && x < maze[0].length) {

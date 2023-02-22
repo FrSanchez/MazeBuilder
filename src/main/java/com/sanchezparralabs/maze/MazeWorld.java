@@ -198,7 +198,7 @@ public class MazeWorld extends Application {
     private final Sphere cameraBody = new Sphere(50);
     private final Rotate elevate = new Rotate(10, Rotate.X_AXIS);
     private final Rotate heading = new Rotate(0, Rotate.Y_AXIS);
-    private final Translate pos = new Translate(200, 400, 200);
+    private final Translate pos = new Translate(200, 800, 200);
     private final PerspectiveCamera camera = new PerspectiveCamera(true);
     private final ArrayList<Shape3D> solidBodies = new ArrayList<>();
 
@@ -221,8 +221,6 @@ public class MazeWorld extends Application {
         PhongMaterial shinyBlue = new PhongMaterial(Color.AQUA);
         shinyBlue.setSpecularColor(Color.WHITE);
 
-//         texture = new Image(textureLoc);
-//        Image texture = new Image(new FileInputStream("49_Italian stone wall_DIFF.jpg"));
         Image diff = new Image(new FileInputStream("diff.jpg"));
         Image spec = new Image(new FileInputStream("spec.jpg"));
         Image bump = new Image(new FileInputStream("norm.jpg"));
@@ -231,26 +229,23 @@ public class MazeWorld extends Application {
         texturedMaterial.setBumpMap(bump);
 
 
-        Group cube2 = createOpenCube(2000, 1000, 2000, 10);
-        MeshView cube3 = createCube(2000, 1000, 2000);
-        MeshView cube = new MeshView(new MazeMesh(10, 10, 200, 200));
+        MeshView cube = new MeshView(new MazeMesh(14, 14, 300, 200));
         cube.setMaterial(texturedMaterial);
-//        cube.setMaterial(new PhongMaterial(Color.LIGHTGREEN));
         cube.setTranslateX(500);
         cube.setTranslateY(800);
         cube.setTranslateZ(1200);
         addSolidBodies(cube);
 
-        MeshView crystal = new MeshView(createCrystal(6, 100f, 200f, 100f));
-        crystal.setMaterial(shinyBlue);
-        crystal.setTranslateX(500);
-        crystal.setTranslateY(800);
-        crystal.setTranslateZ(500);
-        Rotate r = new Rotate();
-        r.setAxis(Rotate.Y_AXIS);
-        rotate360(r, Duration.seconds(2));
-        crystal.getTransforms().add(r);
-        addSolidBodies(crystal);
+//        MeshView crystal = new MeshView(createCrystal(6, 100f, 200f, 100f));
+//        crystal.setMaterial(shinyBlue);
+//        crystal.setTranslateX(500);
+//        crystal.setTranslateY(800);
+//        crystal.setTranslateZ(500);
+//        Rotate r = new Rotate();
+//        r.setAxis(Rotate.Y_AXIS);
+//        rotate360(r, Duration.seconds(2));
+//        crystal.getTransforms().add(r);
+//        addSolidBodies(crystal);
 
         PointLight light = new PointLight(Color.WHITE);
         Group cameraGroup = new Group();
@@ -262,7 +257,7 @@ public class MazeWorld extends Application {
         camera.setVerticalFieldOfView(false);
         cameraGroup.getChildren().addAll(camera, light, cameraBody);
         cameraGroup.getTransforms().addAll(pos, elevate, heading);
-        addSolidBodies(cameraBody);
+//        addSolidBodies(cameraBody);
 
         // Build the Scene Graph
         Group root = new Group();
@@ -377,7 +372,6 @@ public class MazeWorld extends Application {
         TriangleMesh mesh = new TriangleMesh();
         mesh.getPoints().setAll(points);
         mesh.getTexCoords().setAll(texCoords);
-//        mesh.getTexCoords().addAll(0, 0);
         mesh.getFaces().setAll(faces);
 
         return new MeshView(mesh);
@@ -430,6 +424,7 @@ public class MazeWorld extends Application {
 
         if (solidBodies.contains(mover)) {
             Bounds moverBounds = mover.localToScene(mover.getBoundsInLocal());
+            System.out.println(moverBounds);
             for (Shape3D other : solidBodies) {
                 if (other == mover)
                     continue;
