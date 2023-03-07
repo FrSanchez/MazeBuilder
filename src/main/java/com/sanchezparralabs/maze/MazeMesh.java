@@ -12,6 +12,12 @@ public class MazeMesh extends TriangleMesh {
     private int wallHeight;
     private MazeBuilder builder = new MazeBuilder();
 
+    public char[][] getMaze() {
+        return maze;
+    }
+
+    private char[][] maze;
+
     public MazeMesh(int width, int height, int floorSize, int wallHeight) {
         this.width = width;
         this.height = height;
@@ -21,7 +27,7 @@ public class MazeMesh extends TriangleMesh {
     }
 
     private void buildMesh() {
-        char[][] maze = builder.build(width, height);
+        maze = builder.build(width, height);
         builder.print(maze);
         int meshWidth = (maze[0].length + 1) * 2;
         int xm = maze[0].length * floorSize / 2;

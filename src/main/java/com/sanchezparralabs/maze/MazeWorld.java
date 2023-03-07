@@ -1,6 +1,6 @@
 package com.sanchezparralabs.maze;
 
-/*/*w    w w   .  d e  m  o  2 s    . c  o   m
+/* https://www.demo2s.com/java/javafx-mesh-tutorial-with-examples.html
 * Copyright (c) 2016 theKidOfArcrania
         *
         * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,6 +24,7 @@ package com.sanchezparralabs.maze;
 
 import java.io.FileInputStream;
 import java.util.ArrayList;
+import java.util.List;
 
 import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
@@ -32,20 +33,17 @@ import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.ConditionalFeature;
 import javafx.application.Platform;
+import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point3D;
-import javafx.scene.Group;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.PerspectiveCamera;
-import javafx.scene.PointLight;
-import javafx.scene.Scene;
-import javafx.scene.SceneAntialiasing;
+import javafx.scene.*;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
@@ -54,6 +52,9 @@ import javafx.scene.shape.MeshView;
 import javafx.scene.shape.Shape3D;
 import javafx.scene.shape.Sphere;
 import javafx.scene.shape.TriangleMesh;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
@@ -62,8 +63,8 @@ import javafx.util.Duration;
 public class MazeWorld extends Application {
     private static final double WALK_SIN_STRETCH = .3;
     private static final double WALK_SIN_SHIFT = 1.2;
-    private static final double TURN_VELOCITY = 45;
-    private static final double MOVE_VELOCITY = 200;
+    private static final double TURN_VELOCITY = 90;
+    private static final double MOVE_VELOCITY = 300;
     private static final double WALK_CYCLE = 5;
     private static final double WALK_LOWER = 20;
     private static final double WALK_UPPER = 0;
@@ -102,83 +103,6 @@ public class MazeWorld extends Application {
         return cube;
     }
 
-    private static Mesh createCrystal(int latFaces, float side, float bodyHeight, float pyramidHeight) {
-        TriangleMesh mesh = new TriangleMesh();
-        mesh.getTexCoords().addAll(0, 0);
-
-        double totalExterior = 2 * Math.PI;
-        double[] regularPoints = new double[latFaces * 2];
-        double x = 0;
-        double y = 0;
-        double angle = 0;
-        for (int i = 0; i < latFaces; i++, angle += totalExterior / latFaces) {
-            regularPoints[i * 2] = x;
-            regularPoints[i * 2 + 1] = y;
-            x += Math.cos(angle) * side;
-            y += Math.sin(angle) * side;
-        }
-
-        double centerX, centerZ;
-        if ((latFaces & 1) == 0) {
-            centerX = regularPoints[latFaces];
-            centerZ = regularPoints[latFaces + 1];
-        } else {
-            centerX = (regularPoints[latFaces - 1] + regularPoints[latFaces + 1]) / 2;
-            centerZ = (regularPoints[latFaces] + regularPoints[latFaces + 2]) / 2;
-        }
-        centerX = (centerX + regularPoints[0]) / 2;
-        centerZ = (centerZ + regularPoints[1]) / 2;
-
-        // Add top pyramid.
-        mesh.getPoints().addAll(0, -pyramidHeight - bodyHeight / 2, 0);
-        for (int i = 0; i < latFaces; i++) {
-            mesh.getPoints().addAll((float) (regularPoints[i * 2] - centerX), -bodyHeight / 2,
-                    (float) (regularPoints[i * 2 + 1] - centerZ));
-            if (i == 0)
-                mesh.getFaces().addAll(0, 0, latFaces, 0, 1, 0);
-            else
-                mesh.getFaces().addAll(0, 0, i, 0, i + 1, 0);
-        }
-
-        // Add body prism
-        for (int i = 0; i < latFaces; i++) {
-            mesh.getPoints().addAll((float) (regularPoints[i * 2] - centerX), bodyHeight / 2,
-                    (float) (regularPoints[i * 2 + 1] - centerZ));
-            if (i == 0) {
-                mesh.getFaces().addAll(latFaces, 0, latFaces * 2, 0, latFaces + 1, 0);
-                mesh.getFaces().addAll(latFaces, 0, latFaces + 1, 0, 1, 0);
-            } else {
-                int across = i + latFaces;
-                mesh.getFaces().addAll(i, 0, across, 0, across + 1, 0);
-                mesh.getFaces().addAll(i, 0, across + 1, 0, i + 1, 0);
-            }
-        }
-
-        // Add bottom pyramid
-        int last = latFaces * 2 + 1;
-        mesh.getPoints().addAll(0, pyramidHeight + bodyHeight / 2, 0);
-        for (int i = 0; i < latFaces; i++)
-            if (i == 0)
-                mesh.getFaces().addAll(last, 0, latFaces + 1, 0, latFaces * 2, 0);
-            else
-                mesh.getFaces().addAll(last, 0, i + latFaces + 1, 0, i + latFaces, 0);
-
-        for (int i = 0; i < mesh.getFaces().size(); i += 6)
-            mesh.getFaceSmoothingGroups().addAll(0);
-        return mesh;
-    }
-
-    private static Group createOpenCube(int width, int height, int depth, int thickness) {
-        Group cube = new Group();
-        cube.getChildren().addAll(createBox(0, 0, 0, thickness, height, depth, Color.ALICEBLUE),
-                createBox(0, 0, 0, width, thickness, depth, Color.GREEN),
-                createBox(0, 0, 0, width, height, thickness, Color.ALICEBLUE),
-                createBox(width, 0, 0, thickness, height, depth, Color.ALICEBLUE),
-                createBox(0, height, 0, width, thickness, depth, Color.DARKBLUE),
-                createBox(0, 0, depth, width, height, thickness, Color.ALICEBLUE));
-        return cube;
-    }
-
     private static void rotate360(Rotate r, Duration cycleDuration) {
         Timeline rotating = new Timeline();
         rotating.getKeyFrames().addAll(new KeyFrame(Duration.seconds(0), new KeyValue(r.angleProperty(), 0)),
@@ -196,11 +120,17 @@ public class MazeWorld extends Application {
     private double before = -1;
     private double walkFrame = 0;
     private final Sphere cameraBody = new Sphere(50);
-    private final Rotate elevate = new Rotate(10, Rotate.X_AXIS);
+    private final Rotate elevate = new Rotate(0, Rotate.X_AXIS);
     private final Rotate heading = new Rotate(0, Rotate.Y_AXIS);
-    private final Translate pos = new Translate(200, 800, 200);
+    private final Translate pos = new Translate(200, 50, 200);
     private final PerspectiveCamera camera = new PerspectiveCamera(true);
     private final ArrayList<Shape3D> solidBodies = new ArrayList<>();
+    private Label hints;
+    Bounds mazeBounds;
+    int mazeWidth = 14;
+    int mazeDepth = 14;
+    int floorSize = 300;
+    private char[][] mazeData;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -214,13 +144,6 @@ public class MazeWorld extends Application {
 
         primaryStage.setResizable(false);
 
-        Box testBox = new Box(5, 5, 5);
-        testBox.setMaterial(new PhongMaterial(Color.RED));
-        // testBox.setDrawMode(DrawMode.LINE);
-
-        PhongMaterial shinyBlue = new PhongMaterial(Color.AQUA);
-        shinyBlue.setSpecularColor(Color.WHITE);
-
         Image diff = new Image(new FileInputStream("diff.jpg"));
         Image spec = new Image(new FileInputStream("spec.jpg"));
         Image bump = new Image(new FileInputStream("norm.jpg"));
@@ -228,44 +151,57 @@ public class MazeWorld extends Application {
         texturedMaterial.setSpecularMap(spec);
         texturedMaterial.setBumpMap(bump);
 
+        MazeMesh mesh = new MazeMesh(mazeWidth, mazeDepth, floorSize, 200);
+        mazeData = mesh.getMaze();
+        MeshView maze = new MeshView(mesh);
+        mazeBounds = maze.localToScene(maze.getBoundsInLocal());
+        pos.setX(mazeBounds.getMinX() + floorSize * 1.5);
+        pos.setZ(mazeBounds.getMinZ() + floorSize * 1.5);
+        maze.setMaterial(texturedMaterial);
+        addSolidBodies(maze);
 
-        MeshView cube = new MeshView(new MazeMesh(14, 14, 300, 200));
-        cube.setMaterial(texturedMaterial);
-        cube.setTranslateX(500);
-        cube.setTranslateY(800);
-        cube.setTranslateZ(1200);
-        addSolidBodies(cube);
-
-//        MeshView crystal = new MeshView(createCrystal(6, 100f, 200f, 100f));
-//        crystal.setMaterial(shinyBlue);
-//        crystal.setTranslateX(500);
-//        crystal.setTranslateY(800);
-//        crystal.setTranslateZ(500);
-//        Rotate r = new Rotate();
-//        r.setAxis(Rotate.Y_AXIS);
-//        rotate360(r, Duration.seconds(2));
-//        crystal.getTransforms().add(r);
-//        addSolidBodies(crystal);
+        MeshView crystal = new CrystalMesh(6, 50f, 100f, 50f);
+        crystal.setTranslateX((mazeWidth / 2 - 1) * floorSize);
+        crystal.setTranslateY(100);
+        crystal.setTranslateZ((mazeDepth / 2 - 1) * floorSize);
+        Rotate r = new Rotate();
+        r.setAxis(Rotate.Y_AXIS);
+        rotate360(r, Duration.seconds(2));
+        crystal.getTransforms().add(r);
+        addSolidBodies(crystal);
 
         PointLight light = new PointLight(Color.WHITE);
         Group cameraGroup = new Group();
 
         // Create and position camera
-        // rotate360(xRotate);
         camera.setFieldOfView(78);
         camera.setFarClip(10000);
         camera.setVerticalFieldOfView(false);
         cameraGroup.getChildren().addAll(camera, light, cameraBody);
         cameraGroup.getTransforms().addAll(pos, elevate, heading);
-//        addSolidBodies(cameraBody);
+        addSolidBodies(cameraBody);
+
+        hints = new Label("HInts show here");
+        hints.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
+        hints.setTextFill(Color.LIGHTGREEN);
+
 
         // Build the Scene Graph
+        // Add 2D content
+        AnchorPane globalRoot = new AnchorPane();
+        Scene scene = new Scene(globalRoot, 1024, 768, true);
+
+        // Add 3D content
         Group root = new Group();
-        root.getChildren().addAll(cameraGroup, testBox, cube);//, crystal);
-        Scene scene = new Scene(root, 1000, 600, true, SceneAntialiasing.BALANCED);
-        scene.setCamera(camera);
-        scene.setFill(Color.BLACK);
+        root.getChildren().addAll(cameraGroup, maze, crystal);
+        SubScene sub = new SubScene(root, 1024, 768, true, SceneAntialiasing.BALANCED);
+        sub.setCamera(camera);
+        sub.toBack();
+        sub.setFill(Color.BLUE);
+
+        globalRoot.getChildren().addAll(sub, hints);
         primaryStage.setScene(scene);
+
         primaryStage.show();
         primaryStage.setFullScreen(false);
         primaryStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
@@ -327,56 +263,6 @@ public class MazeWorld extends Application {
         tick.start();
     }
 
-    private MeshView createCube(int width, int height, int depth) {
-                float[] points = {
-                0, 0, height,      //P0
-                width, 0, height,    //P1
-                0, depth, height,    //P2
-                width, depth, height,  //P3
-                0, 0, 0,        //P4
-                width, 0, 0,      //P5
-                0, depth, 0,      //P6
-                width, depth, 0     //P7
-        };
-        float[] texCoords = {
-                0.25f, 0,       //T0
-                0.5f, 0,        //T1
-                0, 0.25f,       //T2
-                0.25f, 0.25f,   //T3
-                0.5f, 0.25f,    //T4
-                0.75f, 0.25f,   //T5
-                1, 0.25f,       //T6
-                0, 0.5f,        //T7
-                0.25f, 0.5f,    //T8
-                0.5f, 0.5f,     //T9
-                0.75f, 0.5f,    //T10
-                1, 0.5f,        //T11
-                0.25f, 0.75f,   //T12
-                0.5f, 0.75f     //T13
-        };
-        int[] faces = {
-                5,1,4,0,0,3     //P5,T1 ,P4,T0  ,P0,T3
-                ,5,1,0,3,1,4    //P5,T1 ,P0,T3  ,P1,T4
-                ,0,3,4,2,6,7    //P0,T3 ,P4,T2  ,P6,T7
-                ,0,3,6,7,2,8    //P0,T3 ,P6,T7  ,P2,T8
-                ,1,4,0,3,2,8    //P1,T4 ,P0,T3  ,P2,T8
-                ,1,4,2,8,3,9    //P1,T4 ,P2,T8  ,P3,T9
-                ,5,5,1,4,3,9    //P5,T5 ,P1,T4  ,P3,T9
-                ,5,5,3,9,7,10   //P5,T5 ,P3,T9  ,P7,T10
-                ,4,6,5,5,7,10   //P4,T6 ,P5,T5  ,P7,T10
-                ,4,6,7,10,6,11  //P4,T6 ,P7,T10 ,P6,T11
-                ,3,9,2,8,6,12   //P3,T9 ,P2,T8  ,P6,T12
-                ,3,9,6,12,7,13  //P3,T9 ,P6,T12 ,P7,T13
-        };
-
-        TriangleMesh mesh = new TriangleMesh();
-        mesh.getPoints().setAll(points);
-        mesh.getTexCoords().setAll(texCoords);
-        mesh.getFaces().setAll(faces);
-
-        return new MeshView(mesh);
-    }
-
     private void act(double time) {
         if (left ^ right) {
             double angle = heading.getAngle();
@@ -422,29 +308,56 @@ public class MazeWorld extends Application {
     private boolean move(Shape3D mover, Translate pos, Point3D vector) {
         double oldX = pos.getX(), oldY = pos.getY(), oldZ = pos.getZ();
 
-        if (solidBodies.contains(mover)) {
-            Bounds moverBounds = mover.localToScene(mover.getBoundsInLocal());
-            System.out.println(moverBounds);
-            for (Shape3D other : solidBodies) {
-                if (other == mover)
-                    continue;
-                Bounds otherBounds = other.localToScene(other.getBoundsInLocal());
-                int xColliding = collidingState(moverBounds.getMinX(), moverBounds.getMaxX(), otherBounds.getMinX(),
-                        otherBounds.getMaxX(), vector.getX());
-                int yColliding = collidingState(moverBounds.getMinY(), moverBounds.getMaxY(), otherBounds.getMinY(),
-                        otherBounds.getMaxY(), vector.getY());
-                int zColliding = collidingState(moverBounds.getMinZ(), moverBounds.getMaxZ(), otherBounds.getMinZ(),
-                        otherBounds.getMaxZ(), vector.getZ());
+        int cx = (int) Math.floor((oldX - mazeBounds.getMinX()) / floorSize);
+        int cz = (int) Math.floor((oldZ - mazeBounds.getMinZ()) / floorSize);
 
-                boolean intersecting = xColliding > 0 && yColliding > 0 && zColliding > 0;
-                if (xColliding + yColliding + zColliding > 3) {
-                    pos.setX(oldX);
-                    pos.setY(oldY);
-                    pos.setZ(oldZ);
-                    return false;
-                }
+        double dx = ((mazeWidth / 2 - 1) * floorSize) - oldX;
+        double dz = ((mazeDepth / 2 - 1) * floorSize) - oldZ;
+        double dist = Math.sqrt((dx * dx) + (dz * dz)) / 300;
+        hints.setText(String.format("%3.1f %d %d", dist, cx, cz));
+
+        List<Bounds> walls = new ArrayList<>(4);
+        int[][] dirs = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
+        for (int[] dir : dirs) {
+            int x = dir[0];
+            int z = dir[1];
+            if (mazeData[cz + z][cx + x] == '#') {
+                double x1 = (cx + x) * floorSize + mazeBounds.getMinX();
+                double z1 = (cz + z) * floorSize + mazeBounds.getMinZ();
+
+                Bounds b = new BoundingBox(x1,
+                        0,
+                        z1,
+                        floorSize,
+                        200,
+                        floorSize
+                );
+                walls.add(b);
             }
         }
+//
+//        if (solidBodies.contains(mover)) {
+        Bounds moverBounds = mover.localToScene(mover.getBoundsInLocal());
+        for (Bounds otherBounds : walls) {
+//            for (Shape3D other : solidBodies) {
+//                if (other == mover)
+//                    continue;
+//                Bounds otherBounds = other.localToScene(other.getBoundsInLocal());
+            int xColliding = collidingState(moverBounds.getMinX(), moverBounds.getMaxX(), otherBounds.getMinX(),
+                    otherBounds.getMaxX(), vector.getX());
+            int yColliding = collidingState(moverBounds.getMinY(), moverBounds.getMaxY(), otherBounds.getMinY(),
+                    otherBounds.getMaxY(), vector.getY());
+            int zColliding = collidingState(moverBounds.getMinZ(), moverBounds.getMaxZ(), otherBounds.getMinZ(),
+                    otherBounds.getMaxZ(), vector.getZ());
+//
+            if (xColliding + yColliding + zColliding > 3) {
+                pos.setX(oldX);
+                pos.setY(oldY);
+                pos.setZ(oldZ);
+                return false;
+            }
+        }
+//        }
 
         pos.setX(oldX + vector.getX());
         pos.setY(oldY + vector.getY());
